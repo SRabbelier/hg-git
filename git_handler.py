@@ -652,7 +652,7 @@ class GitHandler(object):
                 heads = self.git.remote_refs(remote_name)
             else:
                 branches = self.bookbranch.split(',')
-                heads = dict((i, self.git.ref(i.strip())) for i in branches)
+                heads = dict((i, self.git.ref(i.strip())) for i in branches if i)
 
             base_name = (remote_name + '/') if remote_name else '' 
 
