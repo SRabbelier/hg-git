@@ -37,6 +37,7 @@ class GitHandler(object):
         self.importbranch = ui.config('git', 'importbranch')
         self.exportbranch = ui.config('git', 'exportbranch', 'refs/heads/master')
         self.bookbranch = ui.config('git', 'bookbranch', '')
+        self.always_update_reference = ui.config('git', 'alwaysupdatereference')
 
         self.init_if_missing()
         self.load_git()
@@ -209,6 +210,8 @@ class GitHandler(object):
             pgit_sha, already_written = self.export_hg_commit(rev)
             if not already_written:
                 self.save_map()
+                if self.always_update_reference:
+                    self.git.set_ref(self.exportbranch, pgit_sha)
 
     # convert this commit into git objects
     # go through the manifest, convert all blobs/trees we don't have
