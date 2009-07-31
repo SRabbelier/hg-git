@@ -72,6 +72,8 @@ def export_revision(repo, revnum, mapping):
   ctx = repo.changectx(revnum)
   manifest = ctx.manifest()
 
+  sys.stderr.write("Exporting revision %d.\n" % revnum)
+
   export_files(ctx, manifest, mapping)
 
 def export_repo(repopath, start, end):
