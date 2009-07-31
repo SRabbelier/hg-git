@@ -69,8 +69,7 @@ def export_files(ctx, manifest, mapping):
   return updates
 
 def export_revision(repo, revnum, mapping):
-  revstr = revnum
-  ctx = repo.changectx(revstr)
+  ctx = repo.changectx(revnum)
   manifest = ctx.manifest()
 
   export_files(ctx, manifest, mapping)
