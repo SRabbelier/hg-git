@@ -76,6 +76,16 @@ def export_revision(repo, revnum, mapping):
 
   export_files(ctx, manifest, mapping)
 
+def write_marks(mapping):
+  f = open('hg.marks', 'w')
+
+  second = lambda (a, b): b
+
+  for hash, mark in sorted(mapping.iteritems(), key=second):
+    f.write(':%d %s\n' % (mark, hash))
+
+  f.close()
+
 def export_repo(repopath, start, end):
   sys.stderr.write("Exporting '%s' from %d up to %d\n" % (repopath, start, end))
 
@@ -91,11 +101,7 @@ def export_repo(repopath, start, end):
   for i in range(end):
     export_revision(repo, i, mapping)
 
-  f = open('hg.marks', 'w')
-  second = lambda (a, b): b
-  for hash, mark in sorted(mapping.iteritems(), key=second):
-    f.write(':%d %s\n' % (mark, hash))
-  f.close()
+  write_marks(mapping)
 
   sys.stderr.write("Done!\n")
 
