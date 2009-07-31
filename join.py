@@ -15,11 +15,11 @@ def main():
   git = parse('git.marks')
   git_hg = open('git-hg.marks', 'w')
 
-  for mark, githash in git.iteritems():
-    if mark not in hg:
+  for mark, hghash in hg.iteritems():
+    if mark not in git:
       continue
 
-    hghash = hg[mark]
+    githash = git[mark]
 
     git_hg.write('%s %s\n' % (githash, hghash))
 
