@@ -50,10 +50,15 @@ def export_file(ctx, file):
 def export_files(ctx, manifest, mapping):
   updates = {}
 
-  for name, nodesha in manifest.iteritems():
+  for name in ctx.files():
     if name == ".hgtags":
       continue
 
+    # file got deleted
+    if name not in manifest:
+      continue
+
+    nodesha = manifest[name]
     hash = tohex(nodesha)
 
     if hash in mapping:
