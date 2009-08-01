@@ -253,7 +253,8 @@ class GitHandler(object):
                 if not git_sha:
                     self.export_hg_commit(p_rev)
 
-        tree_sha, renames = self.write_git_tree(ctx)
+        tree_sha = self.write_git_tree(ctx)
+        renames = self.get_hg_renames(ctx)
         
         commit = {}
         commit['tree'] = tree_sha
@@ -331,12 +332,30 @@ class GitHandler(object):
         self.map_set(commit_sha, phgsha)
         return commit_sha, False
 
+    def get_hg_renames(self, ctx):
+        man = ctx.manifest()
+        renames = []
+        for filenm in ctx.files():
+            # file deleted
+            if filenm not in man:
+                continue
+
+            nodesha = man[filenm]
+            file_id = hex(nodesha)
+
+            fctx = ctx.filectx(filenm)
+            rename = fctx.renamed()
+            if rename:
+                filerename, sha = rename
+                renames.append((filerename, filenm))
+
+        return renames
+
     def write_git_tree(self, ctx):
         trees = {}
         man = ctx.manifest()
         ctx_id = hex(ctx.node())
 
-        renames = []
         for filenm, nodesha in man.iteritems():
             file_id = hex(nodesha)
             if ctx_id not in self.previous_entries:
@@ -346,18 +365,6 @@ class GitHandler(object):
             # write blob if not in our git database
             fctx = ctx.filectx(filenm)
 
-            same_as_last = False
-            for par in ctx.parents():
-                par_id = hex(par.node())
-                if par_id in self.previous_entries:
-                    if filenm in self.previous_entries[par_id]:
-                        if self.previous_entries[par_id][filenm] == file_id:
-                            same_as_last = True
-            if not same_as_last:
-                rename = fctx.renamed()
-                if rename:
-                    filerename, sha = rename
-                    renames.append((filerename, filenm))
             is_exec = 'x' in fctx.flags()
             is_link = 'l' in fctx.flags()
             blob_sha = self.map_git_get(file_id)
@@ -441,8 +448,8 @@ class GitHandler(object):
                 tree_sha = self.git.write_tree_array(tree_data) # writing new trees to git
                 tree_shas[dirnm] = tree_sha
                 self.written_trees[listsha] = tree_sha
-            
-        return (tree_sha, renames) # should be the last root tree sha
+
+        return tree_sha # should be the last root tree sha
 
     def remote_head(self, remote_name):
         for head, sha in self.git.remote_refs(remote_name).iteritems():
