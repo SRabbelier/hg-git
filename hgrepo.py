@@ -54,7 +54,7 @@ class hgrepo(localrepo.localrepository):
                 try:
                     fctx = wctx.filectx(f)
                     newflags = fctx.flags()
-                    new[f] = self.filecommit(fctx, m1, m2, linkrev, trp, changed)
+                    new[f] = self._filecommit(fctx, m1, m2, linkrev, trp, changed)
                     if ((not changed or changed[-1] != f) and
                         m2.get(f) != new[f]):
                         # mention the file in the changelog if some
