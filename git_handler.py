@@ -362,6 +362,9 @@ class GitHandler(object):
             is_link = 'l' in fctx.flags()
             blob_sha = self.map_git_get(file_id)
             if not blob_sha:
+                self.ui.warn("exporting blob: %s\n" % file_id)
+#                import code
+#                code.interact(local=locals())
                 blob_sha = self.git.write_blob(fctx.data()) # writing new blobs to git
                 self.map_set(blob_sha, file_id)
 
