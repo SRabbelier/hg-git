@@ -83,8 +83,21 @@ def write_marks(mapping):
 
   f.close()
 
-def export_repo(repopath, start, end):
-  sys.stderr.write("Exporting '%s' from %d up to %d\n" % (repopath, start, end))
+def read_marks():
+  f = open('hg.marks')
+
+  marks = [i.strip().split(' ') for i in f.readlines()]
+  mapping = dict((i[1], int(i[0][1:])) for i in marks)
+
+  return mapping
+
+def export_range(repo, end, mapping):
+  for i in range(end):
+    export_revision(repo, i, mapping)
+
+
+def export_repo(repopath, end, resume):
+  sys.stderr.write("Exporting '%s' up to %d\n" % (repopath, end))
 
   myui = ui.ui()
   myui.setconfig('ui', 'interactive', 'off')
@@ -92,11 +105,16 @@ def export_repo(repopath, start, end):
 
   mapping = {}
 
+  if resume:
+    mapping = read_marks()
+
   if not end:
     end = len(repo.changelog)
 
-  for i in range(end):
-    export_revision(repo, i, mapping)
+  try:
+    export_range(repo, end, mapping)
+  except Exception, e:
+    print e
 
   write_marks(mapping)
 
@@ -105,18 +123,18 @@ def export_repo(repopath, start, end):
 def main(argv):
   repopath = argv[0]
   end = int(argv[1]) if len(argv) > 1 else 0
-  start = int(argv[2]) if len(argv) > 2 else 0
+  resume = len(argv) > 2
 
-  export_repo(repopath, start, end)
+  export_repo(repopath, end, resume)
 
 if __name__ == '__main__':
   argv = sys.argv
 
   if len(argv) < 2:
-    sys.stderr.write("syntax: %s <repopath> [<end> [<start>]]\n" % argv[0])
+    sys.stderr.write("syntax: %s <repopath> [<end> [-r|--resume]]\n" % argv[0])
     sys.stderr.write("  repopath: any string that hg accepts as a repo\n")
     sys.stderr.write("  end: an integer indicating the last hg revision\n")
-    sys.stderr.write("  start: an integer indicating the first hg revision\n")
+    sys.stderr.write("  resume: whether to resume from a previous export\n")
     sys.exit(255)
   else:
     main(argv[1:])
