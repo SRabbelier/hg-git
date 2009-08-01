@@ -113,8 +113,8 @@ def export_repo(repopath, end, resume):
 
   try:
     export_range(repo, end, mapping)
-  except Exception, e:
-    print e
+  except KeyboardInterrupt, e:
+    sys.stderr.write("\nInterrupted.")
 
   write_marks(mapping)
 
