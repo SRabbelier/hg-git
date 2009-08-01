@@ -51,9 +51,6 @@ def export_files(ctx, manifest, mapping):
   updates = {}
 
   for name in ctx.files():
-    if name == ".hgtags":
-      continue
-
     # file got deleted
     if name not in manifest:
       continue
