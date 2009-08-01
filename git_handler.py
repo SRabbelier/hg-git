@@ -199,19 +199,18 @@ class GitHandler(object):
         else:
           magnitude = 1
         for i, rev in enumerate(self.repo.changelog):
-            if i%100 == 0:
-                self.ui.status(_("at: %*d/%d\n") % (magnitude, i, total))
-            
             ctx = self.repo.changectx(rev)
             state = ctx.extra().get('hg-git', None)
             if state == 'octopus':
                 self.ui.debug("revision %d is a part of octopus explosion\n" % rev)
                 continue
             pgit_sha, already_written = self.export_hg_commit(rev)
-            if not already_written:
-                self.save_map()
-                if self.always_update_reference:
-                    self.git.set_ref(self.exportbranch, pgit_sha)
+            if i%100 == 0:
+                self.ui.status(_("at: %*d/%d\n") % (magnitude, i, total))
+                if not already_written:
+                     self.save_map()
+                     if self.always_update_reference:
+                         self.git.set_ref(self.exportbranch, pgit_sha)
 
     # convert this commit into git objects
     # go through the manifest, convert all blobs/trees we don't have
