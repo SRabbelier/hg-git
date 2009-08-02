@@ -95,6 +95,11 @@ def ginit(ui, repo):
     git = GitHandler(repo, ui)
     # done, __init__ calls init_if_missing
 
+def gmarks(ui, repo):
+    repo.ui.status(_("importing marks from hg.marks and git.marks.\n"))
+    git = GitHandler(repo, ui)
+    git.load_marks('git.marks', 'hg.marks')
+
 commands.norepo += " gclone"
 cmdtable = {
   "gclone":
@@ -117,4 +122,6 @@ cmdtable = {
       (gclear, [], _('Clears out the Git cached data')),
   "ginit":
       (ginit, [], _('Initializes the .git repository')),
+  "gmarks":
+      (gmarks, [], _('Reads in a fast-exported marks file')),
 }
