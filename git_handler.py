@@ -286,6 +286,40 @@ class GitHandler(object):
 
         return renames
 
+    def get_message(self, ctx):
+        message = ctx.description() + "\n"
+        renames = self.get_hg_renames(ctx)
+
+        extra = []
+
+        if not ctx.branch() == 'default':
+            extra.append("branch : " + ctx.branch())
+
+        if renames:
+            for oldfile, newfile in renames:
+                extra.append("rename : " + oldfile + " => " + newfile)
+
+        for key, value in ctx.extra().iteritems():
+            if key in ['committer', 'encoding', 'branch', 'hg-git']:
+                continue
+            else:
+                extra.append("extra : " + key + " : " +  urllib.quote(value))
+
+        is_merge = len(ctx.parents()) > 1
+
+        # save file context listing on merge commit
+        if is_merge:
+            if len(ctx.files()) > 0:
+                for filenm in ctx.files():
+                    extra.append("files : " + filenm)
+            else: # hack for 'fetch' extension idiocy
+                extra.append("emptychangelog : true")
+
+        if extra:
+            message = message + "\n--HG--\n" + '\n'.join(extra) + '\n'
+
+        return message
+
     # convert this commit into git objects
     # go through the manifest, convert all blobs/trees we don't have
     # write the commit object (with metadata info)
@@ -313,15 +347,12 @@ class GitHandler(object):
                 if not git_sha:
                     self.export_hg_commit(p_rev)
 
-        renames = self.get_hg_renames(ctx)
         tree_sha = self.write_git_tree(ctx)
         
         commit = {}
         commit['tree'] = tree_sha
 
         commit['author'] = self.get_author(ctx)
-        message = ctx.description()
-        commit['message'] = ctx.description() + "\n"
         committer = self.get_committer(ctx)
         if committer:
             commit['committer'] = committer
@@ -329,38 +360,9 @@ class GitHandler(object):
         if 'encoding' in extra:
             commit['encoding'] = extra['encoding']
 
-        # HG EXTRA INFORMATION
-        add_extras = False
-        extra_message = ''
-        if not ctx.branch() == 'default':
-            add_extras = True
-            extra_message += "branch : " + ctx.branch() + "\n"
-
-        if renames:
-            add_extras = True
-            for oldfile, newfile in renames:
-                extra_message += "rename : " + oldfile + " => " + newfile + "\n"
-
-        for key, value in extra.iteritems():
-            if key in ['committer', 'encoding', 'branch', 'hg-git']:
-                continue
-            else:
-                add_extras = True        
-                extra_message += "extra : " + key + " : " +  urllib.quote(value) + "\n"
-
-        # save file context listing on merge commit
-        if (len(parents) > 1):
-            add_extras = True
-            if len(ctx.files()) > 0:
-                for filenm in ctx.files():
-                    extra_message += "files : " + filenm + "\n"
-            else: # hack for 'fetch' extension idiocy
-                extra_message += "emptychangelog : true\n"
-
-        if add_extras:
-            commit['message'] += "\n--HG--\n" + extra_message
-
         commit['parents'] = []
+        commit['message'] = self.get_message(ctx)
+
         for parent in parents:
             hgsha = hex(parent.node())
             git_sha = self.map_git_get(hgsha)
