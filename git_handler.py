@@ -93,6 +93,28 @@ class GitHandler(object):
             file.write("%s %s\n" % (key, value))
         file.rename()
 
+    def load_marksfile(self, name):
+      try:
+        f = self.repo.opener(name)
+        lines = f.readlines()
+        f.close()
+        parsed = [i.strip().split(' ') for i in lines]
+        return dict((i[0], i[1]) for i in parsed)
+      except IOError:
+        return {}
+
+    def load_marks(self, gitname, hgname):
+        hgmarks = self.load_marksfile(hgname)
+        gitmarks = self.load_marksfile(gitname)
+
+        for mark, hgsha in hgmarks.iteritems():
+            if mark not in gitmarks:
+                continue
+
+            gitsha = gitmarks[mark]
+            self.map_set(gitsha, hgsha)
+
+        self.save_map()
 
     ## END FILE LOAD AND SAVE METHODS
 
