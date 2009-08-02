@@ -212,13 +212,65 @@ class GitHandler(object):
                      if self.always_update_reference:
                          self.git.set_ref(self.exportbranch, pgit_sha)
 
+    def get_author(self, ctx):
+        # hg authors might not have emails
+        author = ctx.user()
+
+        # check for git author pattern compliance
+        regex = re.compile('^(.*?) \<(.*?)\>(.*)$')
+        a = regex.match(author)
+
+        if a:
+            name = a.group(1)
+            email = a.group(2)
+            if len(a.group(3)) > 0:
+                name += ' ext:(' + urllib.quote(a.group(3)) + ')'
+            author = name + ' <' + email + '>'
+        else:
+            author = author + ' <none@none>'
+
+        (time, timezone) = ctx.date()
+
+        return author + ' ' + str(int(time)) + ' ' + format_timezone(-timezone)
+
+    def get_committer(self, ctx):
+        extra = ctx.extra()
+
+        if 'committer' in extra:
+            # fixup timezone
+            (name_timestamp, timezone) = extra['committer'].rsplit(' ', 1)
+            try:
+                timezone = format_timezone(-int(timezone))
+                return '%s %s' % (name_timestamp, timezone)
+            except ValueError:
+                self.ui.warn(_("Ignoring committer in extra, invalid timezone in r%s: '%s'.\n") % (ctx.rev(), timezone))
+
+        return None
+
+    def get_parents(self, ctx):
+        def is_octopus_part(ctx):
+            octopus_parts = set(['octopus', 'octopus-done'])
+            return ctx.extra().get('hg-git', None) in octopus_parts
+
+        parents = []
+        if ctx.extra().get('hg-git', None) == 'octopus-done':
+            # implode octopus parents
+            part = ctx
+            while is_octopus_part(part):
+                (p1, p2) = part.parents()
+                assert not is_octopus_part(p1)
+                parents.append(p1)
+                part = p2
+            parents.append(p2)
+        else:
+            parents = ctx.parents()
+
+        return parents
+
     # convert this commit into git objects
     # go through the manifest, convert all blobs/trees we don't have
     # write the commit object (with metadata info)
     def export_hg_commit(self, rev):
-        def is_octopus_part(ctx):
-            return ctx.extra().get('hg-git', None) in set(['octopus', 'octopus-done'])
-
         # return if we've already processed this
         node = self.repo.changelog.lookup(rev)
         phgsha = hex(node)
@@ -232,18 +284,7 @@ class GitHandler(object):
         ctx = self.repo.changectx(rev)
         extra = ctx.extra()
 
-        parents = []
-        if extra.get('hg-git', None) == 'octopus-done':
-            # implode octopus parents
-            part = ctx
-            while is_octopus_part(part):
-                (p1, p2) = part.parents()
-                assert not is_octopus_part(p1)
-                parents.append(p1)
-                part = p2
-            parents.append(p2)
-        else:
-            parents = ctx.parents()
+        parents = self.get_parents(ctx)
 
         for parent in parents:
             p_rev = parent.rev()
@@ -257,35 +298,14 @@ class GitHandler(object):
         
         commit = {}
         commit['tree'] = tree_sha
-        (time, timezone) = ctx.date()
 
-        # hg authors might not have emails
-        author = ctx.user()
-        
-        # check for git author pattern compliance
-        regex = re.compile('^(.*?) \<(.*?)\>(.*)$')
-        a = regex.match(author)
-
-        if a:
-            name = a.group(1)
-            email = a.group(2)
-            if len(a.group(3)) > 0:
-                name += ' ext:(' + urllib.quote(a.group(3)) + ')'
-            author = name + ' <' + email + '>'
-        else:
-            author = author + ' <none@none>'
-        commit['author'] = author + ' ' + str(int(time)) + ' ' + format_timezone(-timezone)
+        commit['author'] = self.get_author(ctx)
         message = ctx.description()
         commit['message'] = ctx.description() + "\n"
+        committer = self.get_committer(ctx)
+        if committer:
+            commit['committer'] = committer
 
-        if 'committer' in extra:
-            # fixup timezone
-            (name_timestamp, timezone) = extra['committer'].rsplit(' ', 1)
-            try:
-                timezone = format_timezone(-int(timezone))
-                commit['committer'] = '%s %s' % (name_timestamp, timezone)
-            except ValueError:
-                self.ui.warn(_("Ignoring committer in extra, invalid timezone in r%s: '%s'.\n") % (rev, timezone))
         if 'encoding' in extra:
             commit['encoding'] = extra['encoding']
 
