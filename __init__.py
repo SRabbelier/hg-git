@@ -89,7 +89,12 @@ def gfetch(ui, repo, remote_name='origin'):
     repo.ui.status(_("pulling from git url\n"))
     git = GitHandler(repo, ui)
     git.fetch(remote_name)
-    
+
+def ginit(ui, repo):
+    repo.ui.status(_("initializing .git repository\n"))
+    git = GitHandler(repo, ui)
+    # done, __init__ calls init_if_missing
+
 commands.norepo += " gclone"
 cmdtable = {
   "gclone":
@@ -110,4 +115,6 @@ cmdtable = {
       (gremote, [], _('hg gremote add remote (url)')),
   "gclear":
       (gclear, [], _('Clears out the Git cached data')),
-}    
+  "ginit":
+      (ginit, [], _('Initializes the .git repository')),
+}
