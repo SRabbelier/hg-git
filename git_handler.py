@@ -306,7 +306,7 @@ class GitHandler(object):
                 filerename, sha = rename
                 renames.append((filerename, filenm))
 
-        return renames
+        return sorted(renames)
 
     def get_message(self, ctx):
         message = ctx.description() + "\n"
