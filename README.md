@@ -36,6 +36,39 @@ Now that you have an Hg repository that can push/pull to/from a Git repository, 
 	
 That will pull down any commits that have been pushed to the server in the meantime and give you a new head that you can merge in.
 
+Using hg-git to interact with a hg repository with git
+=====================================================
+
+You can create a local .git repository like this:
+
+Editr the .hg/hgrc (or your ~/.hgrc if you want to make this the default):
+
+    [git]
+    intree=1
+
+Then do the following from in the hg repository:
+
+    $ hg gexport
+
+This will create a .git repository in the working directory (alongside the .hg
+directory) that you can interact with like any regular git repository. If you
+have made commits in the git repository and want to convert them to hg commits,
+first make sure the changes you want are on the master branch, then do:
+
+    $ hg gimport
+
+This will put your changes on top of the current hg tip.
+
+Optionally you can change your hgrc to include an exportbranch statement:
+
+    [git]
+    intree=1
+    exportbranch=refs/heads/from-hg
+
+This will cause 'hg gexport' to update the 'from-hg' branch, instead of the
+master branch, so that your changes will not be lost even if you work on the
+master branch.
+
 Hg Bookmarks Integration
 ========================
 
@@ -59,7 +92,7 @@ Authors
 
 * Scott Chacon <schacon@gmail.com> - main development
 * Augie Fackler <durin42@gmail.com> - testing and moral support
-* Sverre Rabbelier <sverre@rabbelier.nl> - gexport, mode and i18n stuff and misc fixes
+* Sverre Rabbelier <sverre@rabbelier.nl> - gexport/gimport, mode and i18n stuff and misc fixes
 * Dulwich Developers - most of this code depends on the awesome work they did.
  
 Sponsorship
