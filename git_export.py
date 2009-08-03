@@ -196,7 +196,8 @@ class GitExporter(object):
 
     def export_repo(self):
         for rev in self.repo.changelog:
-            self.progress("Exporting revision %d.\n" % rev)
+            if rev%1000 == 0:
+                self.progress("Exporting revision %d.\n" % rev)
             ctx = self.repo.changectx(rev)
             self.export_revision(ctx)
 
