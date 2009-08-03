@@ -69,6 +69,27 @@ This will cause 'hg gexport' to update the 'from-hg' branch, instead of the
 master branch, so that your changes will not be lost even if you work on the
 master branch.
 
+Speeding up the initial hg to git export
+========================================
+
+If you have a very recent git installed, you can use 'hg fast-export' in
+combination with 'git fast-import' to greatly speed up the initial export. This
+speedup results in an export taking half a minute, rather than 10 minutes, so if
+you have a large repository to export, it might be worth the effort.
+
+See the above section on how to set up your hgrc, and then do the following
+instead of 'hg gexport':
+
+    $ hg ginit
+    $ hg fast-export | git fast-import
+    $ hg gmarks
+    $ hg gexport
+
+The ginit command is to make sure that there is a git repository in the right
+place, and the last 'hg gexport' is to export any tags and update all branches.
+It will however use the export created by fast-export (because of the 'hg
+gmarks' command), and should be near-instantanous.
+
 Hg Bookmarks Integration
 ========================
 
@@ -92,7 +113,7 @@ Authors
 
 * Scott Chacon <schacon@gmail.com> - main development
 * Augie Fackler <durin42@gmail.com> - testing and moral support
-* Sverre Rabbelier <sverre@rabbelier.nl> - gexport/gimport, mode and i18n stuff and misc fixes
+* Sverre Rabbelier <sverre@rabbelier.nl> - fast-export, gexport/gimport, mode and i18n stuff and misc fixes
 * Dulwich Developers - most of this code depends on the awesome work they did.
  
 Sponsorship
