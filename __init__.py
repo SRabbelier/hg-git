@@ -19,6 +19,9 @@ from mercurial import hg
 from mercurial.i18n import _
 from git_handler import GitHandler
 
+# support for 'hg fast-export'
+import git_export
+
 # support for `hg clone git://github.com/defunkt/facebox.git`
 # also hg clone git+ssh://git@github.com/schacon/simplegit.git
 import gitrepo, hgrepo
@@ -100,6 +103,11 @@ def gmarks(ui, repo):
     git = GitHandler(repo, ui)
     git.load_marks('git.marks', 'hg.marks')
 
+def gfastexport(ui, repo, resume=False):
+    git = GitHandler(repo, ui)
+    exporter = git_export.GitExporter(git, 'hg.marks', 'git.marks')
+    exporter.fast_export(resume)
+
 commands.norepo += " gclone"
 cmdtable = {
   "gclone":
@@ -124,4 +132,6 @@ cmdtable = {
       (ginit, [], _('Initializes the .git repository')),
   "gmarks":
       (gmarks, [], _('Reads in a fast-exported marks file')),
+  "fast-export":
+      (gfastexport, [], _('hg fast-export')),
 }
