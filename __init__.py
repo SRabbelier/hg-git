@@ -103,10 +103,10 @@ def gmarks(ui, repo):
     git = GitHandler(repo, ui)
     git.load_marks('git.marks', 'hg.marks')
 
-def gfastexport(ui, repo, resume=False):
+def gfastexport(ui, repo, **kwargs):
     git = GitHandler(repo, ui)
     exporter = git_export.GitExporter(git, 'hg.marks', 'git.marks')
-    exporter.fast_export(resume)
+    exporter.fast_export(**kwargs)
 
 commands.norepo += " gclone"
 cmdtable = {
@@ -133,5 +133,8 @@ cmdtable = {
   "gmarks":
       (gmarks, [], _('Reads in a fast-exported marks file')),
   "fast-export":
-      (gfastexport, [], _('hg fast-export')),
+      (gfastexport,
+        [('o', 'use-options', None, _('use options')),
+         ('r', 'resume', None, _('resume from previous import'))],
+         _('hg fast-export')),
 }

@@ -15,6 +15,7 @@ class GitExporter(object):
         self.next_id = 0
         self.mapping = {}
         self.debugging = True
+        self.use_options = False
 
     def nextid(self):
         self.next_id += 1
@@ -55,6 +56,9 @@ class GitExporter(object):
         self.write('#', SP, msg, LF)
 
     def option(self, option, value=None):
+        if not self.use_options:
+            return
+
         if value:
             self.write('option', SP, option, '=', value, LF)
         else:
@@ -218,7 +222,8 @@ class GitExporter(object):
 
         self.mapping = dict((i[1], int(i[0][1:])) for i in marks)
 
-    def fast_export(self, resume):
+    def fast_export(self, resume=False, use_options=False):
+        self.use_options = use_options
         self.option_quiet()
         self.option_export_marks(self.repo.join(self.gitmarksfile))
 
