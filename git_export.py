@@ -56,7 +56,7 @@ class GitExporter(object):
 
     def option(self, option, value=None):
         if value:
-            self.write('option', SP, option, SP, value, LF)
+            self.write('option', SP, option, '=', value, LF)
         else:
             self.write('option', SP, option, LF)
 
